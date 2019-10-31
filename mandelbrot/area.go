@@ -17,11 +17,11 @@ func NewAreaCentered(Resolution, MaxIterations int, x, y, area float64) *Area {
 		MaxIterations:        MaxIterations,
 		TopLeft:              complex(x-area, y+area),
 		BottomRight:          complex(x+area, y-area),
-		Points:               make([]Point, Resolution*Resolution),
 	}
 }
 
 func (a *Area) Init() {
+	a.Points = make([]Point, a.VerticalResolution*a.HorizontalResolution)
 	for x := 0; x < a.HorizontalResolution; x++ {
 		for y := 0; y < a.VerticalResolution; y++ {
 			point := NewPoint(a.getNumber(x, y))
