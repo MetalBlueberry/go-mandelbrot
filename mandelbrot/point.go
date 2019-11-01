@@ -3,7 +3,6 @@ package mandelbrot
 type Point struct {
 	Point      complex128
 	iterations int
-	z          complex128
 }
 
 // NewPoint returns a new point at a given coordenates
@@ -15,15 +14,16 @@ func NewPoint(r, i float64) Point {
 
 // Calculate performs as many calculations as MaxIterations to determine if the point belongs to the set or not
 func (m *Point) Calculate(MaxIterations int) {
-	for !m.Diverges() && m.iterations < MaxIterations {
-		m.iterations++
-		m.z = m.z*m.z + m.Point
-	}
-}
+	var z complex128
+	point := m.Point
+	iterations := m.iterations
 
-// Diverges returns whether the points diverges from the set.
-func (m *Point) Diverges() bool {
-	return real(m.z)*real(m.z)+imag(m.z)*imag(m.z) > 4
+	for real(z)*real(z)+imag(z)*imag(z) < 4 && iterations < MaxIterations {
+		iterations++
+		z = z*z + point
+	}
+
+	m.iterations = iterations
 }
 
 // Iterations returns the number of performed iterations.

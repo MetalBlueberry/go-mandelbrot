@@ -1,24 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"os"
-	"time"
 
 	"github.com/metalblueberry/mandelbrot/mandelbrot"
 )
 
 func main() {
-	set := mandelbrot.NewAreaCentered(5000, 350, -0.7463, 0.1102, 0.005)
-	set.Init()
-	progress := set.Calculate()
-	for p := range progress {
-		fmt.Fprintf(os.Stderr, "%d\r", 100*p/len(set.Points))
-		<-time.After(time.Second * 1)
+	set := mandelbrot.Area{
+		HorizontalResolution: 1060,
+		VerticalResolution:   730,
+		MaxIterations:        3534,
+		TopLeft:              complex(-1.401854499759, -0.000743603637),
+		BottomRight:          complex(-1.399689899172, 0.000743603637),
 	}
+	set.Init()
+	set.Calculate()
 
 	img := image.NewRGBA(image.Rect(0, 0, set.HorizontalResolution, set.VerticalResolution))
 
