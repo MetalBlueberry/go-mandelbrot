@@ -32,15 +32,27 @@ func TestMandelbrotPoint(t *testing.T) {
 		testMandelbrotPointCases{
 			point:      NewPoint(0, 1),
 			iterations: 100,
-			diverges:   true,
+			diverges:   false,
 		},
 	}
 
 	for i, test := range tests {
 		t.Log(test)
 		test.point.Calculate(test.iterations)
-		if test.point.Diverges() != test.diverges {
-			t.Errorf("Test %d failed, Point %f diverges %t expected %t", i, test.point.Point, test.point.Diverges(), test.diverges)
+		diverges := test.point.Iterations() != test.iterations
+		if diverges != test.diverges {
+			t.Errorf("Test %d failed, Point %f diverges %t expected %t", i, test.point.Point, diverges, test.diverges)
 		}
 	}
+}
+
+var iterations int
+
+func BenchmarkCalculate(b *testing.B) {
+	var point Point
+	for i := 0; i < b.N; i++ {
+		point := NewPoint(-0.5, 0.5)
+		point.Calculate(3000)
+	}
+	iterations = point.Iterations()
 }
