@@ -31,9 +31,8 @@ func (a *Area) Init() {
 }
 
 func (a *Area) Calculate() {
-	for i, pixel := range a.Points {
-		pixel.Calculate(a.MaxIterations)
-		a.Points[i] = pixel
+	for i := 0; i < len(a.Points); i++ {
+		a.Points[i].Calculate(a.MaxIterations)
 	}
 }
 
