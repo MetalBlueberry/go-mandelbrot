@@ -27,8 +27,8 @@ func (m *Point) Calculate(MaxIterations int) {
 
 // Diverges returns whether the points diverges from the set.
 func (m *Point) Diverges() bool {
-	return real(m.z)*real(m.z)+imag(m.z)*imag(m.z) > 4
-	//return cmplx.Abs(m.z) > complex(2, 0)
+	//return real(m.z)*real(m.z)+imag(m.z)*imag(m.z) > 4
+	return cmplx.Abs(m.z) > complex(2, 0)
 }
 
 // Iterations returns the number of performed iterations.
