@@ -30,21 +30,11 @@ func (a *Area) Init() {
 	}
 }
 
-func (a *Area) Calculate() (progress chan int) {
-	progress = make(chan int)
-	go func() {
-		defer close(progress)
-		for i, pixel := range a.Points {
-			pixel.Calculate(a.MaxIterations)
-			a.Points[i] = pixel
-
-			select {
-			case progress <- i:
-			default:
-			}
-		}
-	}()
-	return
+func (a *Area) Calculate() {
+	for i, pixel := range a.Points {
+		pixel.Calculate(a.MaxIterations)
+		a.Points[i] = pixel
+	}
 }
 
 func (a *Area) IndexFor(x, y int) int {
