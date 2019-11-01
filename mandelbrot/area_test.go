@@ -17,8 +17,6 @@ func BenchmarkArea(b *testing.B) {
 	set.Init()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		progress := set.Calculate()
-		for range progress {
-		}
+		set.Calculate()
 	}
 }
