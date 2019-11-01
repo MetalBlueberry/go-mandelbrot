@@ -7,7 +7,7 @@ import (
 )
 
 type testMandelbrotPointCases struct {
-	point      *Point
+	point      Point
 	iterations int
 	diverges   bool
 }
