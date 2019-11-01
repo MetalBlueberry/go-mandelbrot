@@ -1,9 +1,5 @@
 package mandelbrot
 
-import (
-	"math/cmplx"
-)
-
 type Point struct {
 	Point      complex128
 	iterations int
@@ -21,7 +17,7 @@ func NewPoint(r, i float64) Point {
 func (m *Point) Calculate(MaxIterations int) {
 	for !m.Diverges() && m.iterations < MaxIterations {
 		m.iterations++
-		m.z = cmplx.Pow(m.z, 2) + m.Point
+		m.z = m.z*m.z + m.Point
 	}
 }
 
