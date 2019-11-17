@@ -1,5 +1,6 @@
 package mandelbrot
 
+// Area represents a mandelbrot area that will be computed in a single execution.
 type Area struct {
 	HorizontalResolution int
 	VerticalResolution   int
@@ -20,6 +21,7 @@ func NewAreaCentered(Resolution, MaxIterations int, x, y, area float64) *Area {
 	}
 }
 
+// Init allocates the necessary memory to perform the calculation. it is required to call this function before calling Calculate
 func (a *Area) Init() {
 	a.Points = make([]Point, a.VerticalResolution*a.HorizontalResolution)
 	for x := 0; x < a.HorizontalResolution; x++ {
@@ -30,16 +32,19 @@ func (a *Area) Init() {
 	}
 }
 
+// Calculate performs the iterations for each point.
 func (a *Area) Calculate() {
 	for i := 0; i < len(a.Points); i++ {
 		a.Points[i].Calculate(a.MaxIterations)
 	}
 }
 
+// IndexFor is an utility function to locate a x,y coordinate in the Points slice
 func (a *Area) IndexFor(x, y int) int {
 	return x + y*a.HorizontalResolution
 }
 
+// ForIndex is an utility function to get the x,y values for a given index in the Points slice
 func (a *Area) ForIndex(i int) (x, y int) {
 	y = i / a.VerticalResolution
 	x = i % a.HorizontalResolution
@@ -56,7 +61,7 @@ func (a *Area) GetPoint(x, y int) Point {
 	return a.Points[a.IndexFor(x, y)]
 }
 
-// getNumber gives the real and imaginary parts for the complex number located at the given x,y coordenates in the given resolution.
+// getNumber gives the real and imaginary parts for the complex number located at the given x,y coordinates in the given resolution.
 func (a *Area) getNumber(x, y int) (r, i float64) {
 	TopLeftReal := real(a.TopLeft)
 	TopLeftImag := imag(a.TopLeft)
