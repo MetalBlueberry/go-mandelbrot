@@ -46,7 +46,7 @@ func (a *Area) IndexFor(x, y int) int {
 
 // ForIndex is an utility function to get the x,y values for a given index in the Points slice
 func (a *Area) ForIndex(i int) (x, y int) {
-	y = i / a.VerticalResolution
+	y = i / a.HorizontalResolution
 	x = i % a.HorizontalResolution
 	return x, y
 }
