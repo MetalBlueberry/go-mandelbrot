@@ -1,5 +1,6 @@
 package mandelbrot
 
+// Point represents a single complex point and the iterations performed to check if belongs to mandelbrot set or not.
 type Point struct {
 	Point      complex128
 	iterations int
@@ -30,10 +31,3 @@ func (m *Point) Calculate(MaxIterations int) {
 func (m *Point) Iterations() int {
 	return m.iterations
 }
-
-//func (m *MandelbrotPoint) Color() color.Color {
-//return color.RGBA{
-//R: 255 - uint8(255.0*float64(m.iterations)/float64(m.MaxIterations)),
-//A: 255,
-//}
-//}
