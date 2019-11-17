@@ -5,7 +5,7 @@ type Point struct {
 	iterations int
 }
 
-// NewPoint returns a new point at a given coordenates
+// NewPoint returns a new point at a given coordinates
 func NewPoint(r, i float64) Point {
 	return Point{
 		Point: complex(r, i),
