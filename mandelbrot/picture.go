@@ -2,7 +2,6 @@ package mandelbrot
 
 import (
 	"context"
-	"log"
 	"sync"
 )
 
@@ -39,10 +38,6 @@ func (p *Picture) Init() {
 func (p *Picture) Calculate(ctx context.Context, doneIndex chan<- int, workerCount int) {
 	wg := &sync.WaitGroup{}
 	wg.Add(workerCount)
-
-	slices := len(p.areas) / workerCount
-
-	log.Printf("Worker slices len %d", slices)
 
 	next := make(chan int)
 	go workQueue(ctx, next, len(p.areas))
