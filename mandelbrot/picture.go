@@ -39,8 +39,7 @@ func (p *Picture) Calculate(ctx context.Context, doneIndex chan<- int, workerCou
 	wg := &sync.WaitGroup{}
 	wg.Add(workerCount)
 
-	next := make(chan int)
-	go workQueue(ctx, next, len(p.areas))
+	next := workQueue(ctx, len(p.areas))
 
 	for worker := 0; worker < workerCount; worker++ {
 		go doWork(wg, p.areas, next, doneIndex)
@@ -52,16 +51,20 @@ func (p *Picture) Calculate(ctx context.Context, doneIndex chan<- int, workerCou
 }
 
 // workerQueue publish in a channel all the pending works to be done.
-func workQueue(ctx context.Context, next chan<- int, workCount int) {
-	for i := 0; i < workCount; i++ {
-		select {
-		case <-ctx.Done():
-			return
-		case next <- i:
+func workQueue(ctx context.Context, workCount int) <-chan int {
+	next := make(chan int)
+	go func() {
+		for i := 0; i < workCount; i++ {
+			select {
+			case <-ctx.Done():
+				return
+			case next <- i:
 
+			}
 		}
-	}
-	close(next)
+		close(next)
+	}()
+	return next
 }
 
 func doWork(wg *sync.WaitGroup, areas []Area, next <-chan int, doneIndex chan<- int) {
