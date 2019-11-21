@@ -35,7 +35,7 @@ func (p *Picture) Init() {
 	}
 }
 
-func (p *Picture) Calculate(ctx context.Context, doneIndex chan<- int, workerCount int) {
+func (p *Picture) Calculate(ctx context.Context, workerCount int, doneIndex chan<- int) {
 	wg := &sync.WaitGroup{}
 	wg.Add(workerCount)
 
@@ -50,7 +50,12 @@ func (p *Picture) Calculate(ctx context.Context, doneIndex chan<- int, workerCou
 	close(doneIndex)
 }
 
-// workerQueue publish in a channel all the pending works to be done.
+func (p *Picture) CalculateAsync(ctx context.Context, workerCount int) <-chan int {
+	doneIndex := make(chan int)
+	go p.Calculate(ctx, workerCount, doneIndex)
+	return doneIndex
+}
+
 func workQueue(ctx context.Context, workCount int) <-chan int {
 	next := make(chan int)
 	go func() {
