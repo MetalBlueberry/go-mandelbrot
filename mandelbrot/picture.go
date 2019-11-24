@@ -2,6 +2,7 @@ package mandelbrot
 
 import (
 	"context"
+	"log"
 	"sync"
 )
 
@@ -15,6 +16,21 @@ type Picture struct {
 	ChunkImageSize        int
 
 	areas []Area
+}
+
+func NewPicture(topLeft complex128, chunkSize float64, imageSize int, divisions int, maxIterations int) *Picture {
+	if imageSize%divisions != 0 {
+		log.Printf("WARNING: ImageSize %d can't be divided in %d divisions, The final image will be smaller", imageSize, divisions)
+	}
+	chunkImageSize := imageSize / divisions
+	return &Picture{
+		TopLeft:               topLeft,
+		MaxIterations:         maxIterations,
+		ChunkSize:             chunkSize / float64(divisions),
+		HorizontalImageChunks: divisions,
+		VerticalImageChunks:   divisions,
+		ChunkImageSize:        chunkImageSize,
+	}
 }
 
 func (p *Picture) Init() {

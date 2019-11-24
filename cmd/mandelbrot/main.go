@@ -19,33 +19,21 @@ import (
 func main() {
 	top := flag.Float64("top", 1.5, "Top mandelbrot position")
 	left := flag.Float64("left", -2.1, "Left mandelbrot position")
-	chunkSize := flag.Float64("chunkSize", 0.3, "Complex Chunk size")
-	horizontalImageChunks := flag.Int("horizontalImageChunks", 10, "Count of horizontal image chunks")
-	verticalImageChunks := flag.Int("verticalImageChunks", 10, "Count of vertical image chunks")
-	chunkImageSize := flag.Int("chunkImageSize", 120, "Chunk dimensions for image size, image dimensions are horizontalImageChunks*ChunkImageSize x verticalImageChunks*ChunkImageSize")
-	maxIterations := flag.Int("maxIterations", 100, "Maximun number of iterations per point")
+	areaSize := flag.Float64("areaSize", 3, "From the TopLeft, the size of the complex area")
 
-	workers := flag.Int("workers", runtime.NumCPU(), "Maximun number of iterations per point")
+	imageSize := flag.Int("imageSize", 1920, "Size of the squared image generated in pixels")
+	divisions := flag.Int("divisions", 50, "Number of divisions to split the work over multiple routines")
+	maxIterations := flag.Int("maxIterations", 100, "Maximum number of iterations per point")
+
+	workers := flag.Int("workers", runtime.NumCPU(), "Maximum number of iterations per point")
 	out := flag.String("out", "mandelbrot.jpg", "output file, it can be png or jpg")
 	timeout := flag.Int64("timeout", 20, "Maximum number of seconds to compute, if reached. the program will exit")
 
 	flag.Parse()
 
-	if (*horizontalImageChunks)*(*verticalImageChunks)*(*chunkImageSize)*(*chunkImageSize) > 8294400 {
-		log.Print("You are trying to generate a big image... your system my crash because you run out of memory, you have 5 seconds to ctrl+c to cancel.")
-		time.Sleep(time.Second * 5)
-	}
-
 	log.Printf("Start")
 
-	pic := mandelbrot.Picture{
-		TopLeft:               complex(*left, *top),
-		ChunkSize:             *chunkSize,
-		MaxIterations:         *maxIterations,
-		HorizontalImageChunks: *horizontalImageChunks,
-		VerticalImageChunks:   *verticalImageChunks,
-		ChunkImageSize:        *chunkImageSize,
-	}
+	pic := mandelbrot.NewPicture(complex(*left, *top), *areaSize, *imageSize, *divisions, *maxIterations)
 	pic.Init()
 
 	log.Printf("Calculation started")
@@ -75,7 +63,7 @@ func main() {
 	}
 }
 
-func Calculate(timeout int64, workers int, pic mandelbrot.Picture) (*image.RGBA, error) {
+func Calculate(timeout int64, workers int, pic *mandelbrot.Picture) (*image.RGBA, error) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
 	defer ctxCancel()
 	doneIndex := pic.CalculateAsync(ctx, workers)
@@ -138,7 +126,6 @@ func paintAreaInImage(img *image.RGBA, area mandelbrot.Area, offsetX int, offset
 			}, area.MaxIterations, color.RGBA{
 				A: 255,
 			})
-			img.Bounds().In()
 			img.SetRGBA(offsetX+x, offsetY+y, color)
 		}
 	}
