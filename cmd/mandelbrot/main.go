@@ -27,12 +27,18 @@ func main() {
 
 	workers := flag.Int("workers", runtime.NumCPU(), "Maximun number of iterations per point")
 	out := flag.String("out", "mandelbrot.jpg", "output file, it can be png or jpg")
-	timeout := flag.Int("out", 20, "Maximum number of seconds to compute, if reached. the program will exit")
+	timeout := flag.Int64("timeout", 20, "Maximum number of seconds to compute, if reached. the program will exit")
 
 	flag.Parse()
+
+	if (*horizontalImageChunks)*(*verticalImageChunks)*(*chunkImageSize)*(*chunkImageSize) > 8294400 {
+		log.Print("You are trying to generate a big image... your system my crash because you run out of memory, you have 5 seconds to ctrl+c to cancel.")
+		time.Sleep(time.Second * 5)
+	}
+
 	log.Printf("Start")
 
-	mandelPicture := mandelbrot.Picture{
+	pic := mandelbrot.Picture{
 		TopLeft:               complex(*left, *top),
 		ChunkSize:             *chunkSize,
 		MaxIterations:         *maxIterations,
@@ -40,23 +46,14 @@ func main() {
 		VerticalImageChunks:   *verticalImageChunks,
 		ChunkImageSize:        *chunkImageSize,
 	}
-	mandelPicture.Init()
+	pic.Init()
 
-	img := image.NewRGBA(image.Rect(0, 0, mandelPicture.HorizontalResolution(), mandelPicture.VerticalResolution()))
-
-	ctx, ctxCancel := context.WithTimeout(context.Background(), time.Second*20)
-	doneIndex := make(chan int)
-
-	go mandelPicture.Calculate(ctx, doneIndex, *workers)
 	log.Printf("Calculation started")
 
-	for i := range doneIndex {
-		log.Printf("Index %d done", i)
-		offsetX, offsetY := mandelPicture.GetImageOffsetFor(i)
-		paintAreaInImage(img, mandelPicture.GetArea(i), offsetX, offsetY)
+	img, err := Calculate(*timeout, *workers, pic)
+	if err != nil {
+		log.Printf("Calculation failed, image is not complete. cause: %s", err)
 	}
-
-	ctxCancel()
 
 	outFile, err := os.Create(*out)
 	if err != nil {
@@ -74,6 +71,28 @@ func main() {
 		encodingError := png.Encode(outFile, img)
 		if encodingError != nil {
 			panic(err)
+		}
+	}
+}
+
+func Calculate(timeout int64, workers int, pic mandelbrot.Picture) (*image.RGBA, error) {
+	ctx, ctxCancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
+	defer ctxCancel()
+	doneIndex := pic.CalculateAsync(ctx, workers)
+	img := image.NewRGBA(image.Rect(0, 0, pic.HorizontalResolution(), pic.VerticalResolution()))
+
+	for {
+		select {
+		case <-ctx.Done():
+			return img, ctx.Err()
+		case i, ok := <-doneIndex:
+			if !ok {
+				log.Print("Finished")
+				return img, nil
+			}
+			log.Printf("Index %d done", i)
+			offsetX, offsetY := pic.GetImageOffsetFor(i)
+			paintAreaInImage(img, pic.GetArea(i), offsetX, offsetY)
 		}
 	}
 }
@@ -119,6 +138,7 @@ func paintAreaInImage(img *image.RGBA, area mandelbrot.Area, offsetX int, offset
 			}, area.MaxIterations, color.RGBA{
 				A: 255,
 			})
+			img.Bounds().In()
 			img.SetRGBA(offsetX+x, offsetY+y, color)
 		}
 	}
