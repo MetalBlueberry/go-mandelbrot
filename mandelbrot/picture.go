@@ -2,7 +2,9 @@ package mandelbrot
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"runtime/trace"
 	"sync"
 )
 
@@ -58,7 +60,7 @@ func (p *Picture) Calculate(ctx context.Context, workerCount int, doneIndex chan
 	next := workQueue(ctx, len(p.areas))
 
 	for worker := 0; worker < workerCount; worker++ {
-		go doWork(wg, p.areas, next, doneIndex)
+		go doWork(ctx, wg, p.areas, next, doneIndex)
 	}
 
 	wg.Wait()
@@ -88,10 +90,12 @@ func workQueue(ctx context.Context, workCount int) <-chan int {
 	return next
 }
 
-func doWork(wg *sync.WaitGroup, areas []Area, next <-chan int, doneIndex chan<- int) {
+func doWork(ctx context.Context, wg *sync.WaitGroup, areas []Area, next <-chan int, doneIndex chan<- int) {
 	defer wg.Done()
 	for i := range next {
+		areaRegion := trace.StartRegion(ctx, fmt.Sprintf("Area %d", i))
 		areas[i].Calculate()
+		areaRegion.End()
 		doneIndex <- i
 	}
 }

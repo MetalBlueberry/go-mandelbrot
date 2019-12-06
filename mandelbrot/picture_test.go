@@ -14,6 +14,27 @@ import (
 	"github.com/metalblueberry/mandelbrot/mandelbrot"
 )
 
+var pic *mandelbrot.Picture
+
+func TestSimpleRenderTrace(t *testing.T) {
+	pic = &mandelbrot.Picture{
+		TopLeft:               complex(-1.401854499759, -0.000743603637),
+		MaxIterations:         1000,
+		ChunkSize:             0.00021646,
+		HorizontalImageChunks: 4,
+		VerticalImageChunks:   4,
+		ChunkImageSize:        254,
+	}
+	ctx := context.Background()
+	done := make(chan int)
+	pic.Init()
+
+	go pic.Calculate(ctx, 1, done)
+	for range done {
+
+	}
+}
+
 func benchmarkComplexPictureWorkers(b *testing.B, workers int) {
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()

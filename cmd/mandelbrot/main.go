@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/trace"
 	"time"
 
 	"github.com/metalblueberry/mandelbrot/mandelbrot"
@@ -66,12 +67,15 @@ func main() {
 func Calculate(timeout int64, workers int, pic *mandelbrot.Picture) (*image.RGBA, error) {
 	ctx, ctxCancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeout))
 	defer ctxCancel()
+	ctx, task := trace.NewTask(ctx, "Calculate")
+	defer task.End()
 	doneIndex := pic.CalculateAsync(ctx, workers)
 	img := image.NewRGBA(image.Rect(0, 0, pic.HorizontalResolution(), pic.VerticalResolution()))
 
 	for {
 		select {
 		case <-ctx.Done():
+			log.Print("CANCEL")
 			return img, ctx.Err()
 		case i, ok := <-doneIndex:
 			if !ok {
