@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	b64 "encoding/base64"
-	"github.com/metalblueberry/mandelbrot/mandelbrot"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -12,13 +11,15 @@ import (
 	"runtime/trace"
 	"syscall/js"
 	"time"
+
+	"github.com/metalblueberry/mandelbrot/mandelbrot"
 )
 
-func add(this js.Value, i []js.Value) interface{} {
+func mandelbrotDraw(this js.Value, i []js.Value) interface{} {
 	pic := mandelbrot.NewPicture(complex(-1.401854499759, -0.000743603637), 0.00021646*1024, 1024, 1, 1000)
 	var err error
 	pic.Init()
-	result, err := Calculate(100, 1, pic)
+	result, err := Calculate(100, 6, pic)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -35,7 +36,7 @@ func add(this js.Value, i []js.Value) interface{} {
 }
 
 func registerCallbacks() {
-	js.Global().Set("add", js.FuncOf(add))
+	js.Global().Set("mandelbrotDraw", js.FuncOf(mandelbrotDraw))
 }
 
 func main() {
