@@ -45,7 +45,7 @@
 
 			var width = frame.width.animVal.value
 			var height = frame.height.animVal.value
-			var size = Math.max(width,height)
+			var size = Math.max(width, height)
 
 			// https://stackoverflow.com/questions/10859257/how-can-i-add-an-image-element-to-the-svg-dom
 			var svgimg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
@@ -57,7 +57,7 @@
 			svgimg.setAttributeNS(null, 'visibility', 'visible');
 			scene.append(svgimg);
 		}
-		
+
 
 		function initController() {
 			console.log("Controller initialization")
