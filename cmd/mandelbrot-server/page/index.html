@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv='content-type' content='text/html; charset=utf-8' />
+	<meta name='viewport' content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'>
+	<meta http-equiv='X-UA-Compatible' content='IE=edge'>
+	<META NAME='Description' content='Pan and zoom svg elements demo '>
+	<meta name='keywords' content='svg, pan, zoom' />
+	<meta name='author' content='Andrei Kashcha'>
+	<meta name='title' content='SVG panzoom demo' />
+	<link rel="stylesheet" href="/styles.css">
+	<title id="title"></title>
+</head>
+
+<body>
+	<button class="render" onclick="render()">Render</button>
+	<svg class="fillscreen" id="frame">
+		<g class="fillscreen" id="scene">
+			<!-- <image href="https://mdn.mozillademos.org/files/6457/mdn_logo_only_color.png" height="200" width="200" /> -->
+		</g>
+	</svg>
+	<script src='https://unpkg.com/panzoom@8.4.0/dist/panzoom.min.js'></script>
+	<script>
+		console.log("start")
+
+		function httpGetAsync(theUrl, callback) {
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.onreadystatechange = function () {
+				if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+					callback(xmlHttp.responseText);
+			}
+			xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+			xmlHttp.send(null);
+		}
+
+
+		function render() {
+			scene = document.getElementById('scene')
+			matrix = scene.getCTM()
+			console.log(matrix)
+			frame = document.getElementById('frame')
+			console.log(frame.width.animVal.value)
+			console.log(frame.height.animVal.value)
+
+			var width = frame.width.animVal.value
+			var height = frame.height.animVal.value
+			var size = Math.max(width,height)
+
+			// https://stackoverflow.com/questions/10859257/how-can-i-add-an-image-element-to-the-svg-dom
+			var svgimg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+			svgimg.setAttributeNS(null, 'height', size / matrix.a);
+			svgimg.setAttributeNS(null, 'width', size / matrix.a);
+			svgimg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '/mandelbrot?height=' + height + '&width=' + width + `&a=` + matrix.a + `&e=` + matrix.e + `&f=` + matrix.f);
+			svgimg.setAttributeNS(null, 'x', -matrix.e / matrix.a);
+			svgimg.setAttributeNS(null, 'y', -matrix.f / matrix.a);
+			svgimg.setAttributeNS(null, 'visibility', 'visible');
+			scene.append(svgimg);
+		}
+		
+
+		function initController() {
+			console.log("Controller initialization")
+			var area = document.getElementById('scene')
+			window.pz = panzoom(area, {
+				autocenter: true,
+				bounds: true,
+				filterKey: function (/* e, dx, dy, dz */) {
+					// don't let panzoom handle this event:
+					return true;
+				}
+			})
+		}
+
+		render()
+		initController()
+	</script>
+</body>
+
+</html>

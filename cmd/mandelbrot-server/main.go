@@ -1,28 +1,167 @@
 package main
 
 import (
+	"context"
+	"flag"
+	"image"
+	"image/color"
+	"image/png"
+	"io"
 	"log"
+	"math"
 	"net/http"
+	"os"
+	"runtime/trace"
+	"strconv"
+
+	"github.com/metalblueberry/mandelbrot/mandelbrot"
+)
+
+var (
+	listen = flag.String("listen", ":8080", "listen address")
+	dir    = flag.String("dir", "./page", "directory to serve")
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
 
-	keys, ok := r.URL.Query()["key"]
+	sheight := r.URL.Query().Get("height")
+	swidth := r.URL.Query().Get("width")
+	sa := r.URL.Query().Get("a")
+	se := r.URL.Query().Get("e")
+	sf := r.URL.Query().Get("f")
+	log.Printf("Request %s, %s, %s, %s, %s", sheight, swidth, sa, se, sf)
 
-	if !ok || len(keys[0]) < 1 {
-		log.Println("Url Param 'key' is missing")
-		return
+	height, err := strconv.ParseFloat(sheight, 64)
+	if err != nil {
+		panic(err)
+	}
+	width, err := strconv.ParseFloat(swidth, 64)
+	if err != nil {
+		panic(err)
+	}
+	size := math.Max(height, width)
+
+	a, err := strconv.ParseFloat(sa, 64)
+	if err != nil {
+		panic(err)
+	}
+	e, err := strconv.ParseFloat(se, 64)
+	if err != nil {
+		panic(err)
+	}
+	f, err := strconv.ParseFloat(sf, 64)
+	if err != nil {
+		panic(err)
 	}
 
-	// Query()["key"] will return an array of items,
-	// we only want the single item.
-	key := keys[0]
+	log.Printf("w %f, h %f, s %d", width, height, size)
 
-	log.Println("Url Param 'key' is: " + string(key))
+	pic := mandelbrot.NewPicture(
+		complex(-2.1-3*e/(size*a), 1.5+3*f/(a*size)),
+		3/a,
+		int(size),
+		1,
+		1000,
+	)
+	// pic := mandelbrot.NewPicture(complex(-1.401854499759, -0.000743603637), 0.00021646*1024, 1024, 1, 1000)
+	pic.Init()
+	img, err := Calculate(r.Context(), 6, pic)
+	if err != nil {
+		panic(err)
+	}
+	outFile, err := os.Create("last_render.png")
+	if err != nil {
+		log.Fatalf("output file cannot be opened, cause: %s", err)
+	}
+	defer outFile.Close()
+	encodingError := png.Encode(io.MultiWriter(w, outFile), img)
+	if encodingError != nil {
+		panic(err)
+	}
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	flag.Parse()
+	log.Printf("listening on %q...", *listen)
 
+	http.HandleFunc("/mandelbrot", handler)
+	http.Handle("/", http.FileServer(http.Dir(*dir)))
+
+	http.ListenAndServe(*listen, nil)
+}
+
+func Calculate(ctx context.Context, workers int, pic *mandelbrot.Picture) (*image.RGBA, error) {
+	ctx, task := trace.NewTask(ctx, "Calculate")
+	defer task.End()
+	doneIndex := pic.CalculateAsync(ctx, workers)
+	img := image.NewRGBA(image.Rect(0, 0, pic.HorizontalResolution(), pic.VerticalResolution()))
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Print("CANCEL")
+			return img, ctx.Err()
+		case i, ok := <-doneIndex:
+			if !ok {
+				log.Print("Finished")
+				return img, nil
+			}
+			log.Printf("Index %d done", i)
+			offsetX, offsetY := pic.GetImageOffsetFor(i)
+			paintAreaInImage(img, pic.GetArea(i), offsetX, offsetY)
+		}
+	}
+}
+func paintAreaInImage(img *image.RGBA, area mandelbrot.Area, offsetX int, offsetY int) {
+	for x := 0; x < area.HorizontalResolution; x++ {
+		for y := 0; y < area.VerticalResolution; y++ {
+			point := area.GetPoint(x, y)
+			color := getColor(point, []color.RGBA{
+				color.RGBA{
+					R: 255,
+					A: 255,
+				},
+				color.RGBA{
+					G: 255,
+					A: 255,
+				},
+				color.RGBA{
+					B: 255,
+					A: 255,
+				},
+				color.RGBA{
+					R: 255,
+					G: 255,
+					A: 255,
+				},
+				color.RGBA{
+					G: 255,
+					B: 255,
+					A: 255,
+				},
+				color.RGBA{
+					R: 255,
+					B: 255,
+					A: 255,
+				},
+				color.RGBA{
+					R: 255,
+					G: 255,
+					B: 255,
+					A: 255,
+				},
+			}, area.MaxIterations, color.RGBA{
+				A: 255,
+			})
+			img.SetRGBA(offsetX+x, offsetY+y, color)
+		}
+	}
+}
+
+func getColor(point mandelbrot.Point, palette []color.RGBA, maxIterations int, maxIterationsColor color.RGBA) color.RGBA {
+	if point.Iterations() == maxIterations {
+		return maxIterationsColor
+	}
+	index := point.Iterations() % len(palette)
+	return palette[index]
 }
