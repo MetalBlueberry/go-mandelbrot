@@ -6,11 +6,9 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"io"
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"runtime/trace"
 	"strconv"
 
@@ -54,27 +52,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	log.Printf("w %f, h %f, s %d", width, height, size)
+	log.Printf("w %f, h %f, s %f", width, height, size)
 
 	pic := mandelbrot.NewPicture(
 		complex(-2.1-3*e/(size*a), 1.5+3*f/(a*size)),
 		3/a,
 		int(size),
-		1,
+		32,
 		1000,
 	)
-	// pic := mandelbrot.NewPicture(complex(-1.401854499759, -0.000743603637), 0.00021646*1024, 1024, 1, 1000)
 	pic.Init()
 	img, err := Calculate(r.Context(), 6, pic)
 	if err != nil {
 		panic(err)
 	}
-	outFile, err := os.Create("last_render.png")
-	if err != nil {
-		log.Fatalf("output file cannot be opened, cause: %s", err)
-	}
-	defer outFile.Close()
-	encodingError := png.Encode(io.MultiWriter(w, outFile), img)
+	encodingError := png.Encode(w, img)
 	if encodingError != nil {
 		panic(err)
 	}
