@@ -71,3 +71,7 @@ line {
     bottom: 0;
     width: 100%;
 }
+.panzoom {
+-webkit-backface-visibility: initial !important;
+-webkit-transform-origin: 50% 50%;
+}
